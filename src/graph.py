@@ -24,4 +24,3 @@ def generate_random_dropoff_location(G, pickup_node):
     while dropoff_node == pickup_node:
         dropoff_node = random.choice(list(G.nodes()))
     return dropoff_node
-

@@ -5,16 +5,36 @@ class RideshareSimulator:
         self.G = G
         self.num_vans = num_vans
         self.vans = [Van(van_id) for van_id in range(1, num_vans + 1)]
+        self.network_flow = nx.DiGraph()
+
+
+    def update_network_flow(self):
+        for van in self.vans:
+            for customer_request in van.service_queue:
+                pickup_node = customer_request[1]
+                dropoff_node = customer_request[2]
+                edge_capacity = 1  
+                self.network_flow.add_edge(pickup_node, dropoff_node, capacity=edge_capacity)
+
+    def calculate_network_flow(self):
+        flow_value, flow_dict = flow.max_flow_min_cost(self.network_flow, source_node, sink_node)
+        return flow_value, flow_dict
 
     def simulate_ridesharing(self, pickup_requests):
         for clock_tick in range(1, 11):
             print(f"At clock tick {clock_tick}:")
+            
+            self.update_network_flow()
+            
+            flow_value, flow_dict = self.calculate_network_flow()
+            
             for van in self.vans:
                 if not van.service_queue:
                     if pickup_requests:
-                        customer_request = pickup_requests.pop(0)
-                        van.assign_customer(customer_request)
-                        print(f"Van {van.van_id}: Pickup request at node {customer_request[1]} for customer {customer_request[0]}, drop off at node {customer_request[2]}")
+                        customer_request = self.assign_customer_based_on_flow(flow_dict, flow_value, pickup_requests)
+                        if customer_request:
+                            van.assign_customer(customer_request)
+                            print(f"Van {van.van_id}: Pickup request at node {customer_request[1]} for customer {customer_request[0]}, drop off at node {customer_request[2]}")
                 else:
                     next_node = van.service_queue[0][1]
                     print(f"Van {van.van_id} is heading to node {next_node}")
